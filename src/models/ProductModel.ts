@@ -1,4 +1,4 @@
-// src/models/ProductModel.ts
+// src/models/ProductModel.ts (Модель товаров)
 
 import { Api, ApiListResponse } from '../components/base/api';
 import { EventEmitter } from '../components/base/events';

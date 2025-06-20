@@ -1,146 +1,80 @@
 // src/index.ts
-
+import './scss/styles.scss';
 import { EventEmitter } from './components/base/events';
 import { Api } from './components/base/api';
 import { ProductModel } from './models/ProductModel';
 import { CartModel } from './models/CartModel';
 import { OrderModel } from './models/OrderModel';
-import { AppData } from './AppData';
+import { CatalogView } from './views/catalogView';
+import { CartView } from './views/cartView';
+import { OrderView } from './views/orderView';
+import { ProductModalView } from './views/productModalView';
+import { ModalView } from './views/ModalView';
+import { AppPresenter } from './presenters/appPresenter';
 import { API_URL } from './utils/constants';
-import { Page } from './components/Page';
-import { Modal } from './components/Modal';
-import { ProductCard } from './components/ProductCard';
-import { ProductModalView } from './components/ProductModalView';
-import { Cart } from './components/Cart';
-import { Product, ProductFormatted } from './types';
 
-// Инициализация
-const events = new EventEmitter();
-const api = new Api(API_URL);
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        // Основные элементы
+        const gallery = document.querySelector('.gallery');
+if (!gallery) throw new Error('Gallery element not found');
 
-// Проверка и получение DOM элементов
-const pageElement = document.querySelector('.page');
-const modalContainer = document.querySelector('#modal-container');
-const cardPreviewTemplate = document.querySelector('#card-preview');
-const basketElement = document.querySelector('#basket');
-const cardCatalogTemplate = document.querySelector('#card-catalog');
-const galleryElement = document.querySelector('.gallery');
-const modalCloseButton = document.querySelector('.modal__close');
+       
+        const basket = document.querySelector('.basket');
+        const orderForm = document.querySelector('.order');
+        
+        const modalContainer = document.querySelector('#modal-container');
 
-if (
-	!pageElement ||
-	!modalContainer ||
-	!cardPreviewTemplate ||
-	!basketElement ||
-	!cardCatalogTemplate ||
-	!galleryElement ||
-	!modalCloseButton
-) {
-	throw new Error('Не найдены необходимые DOM элементы');
+        if (!gallery || !basket || !orderForm || !modalContainer) {
+            throw new Error('One or more required elements not found in DOM');
+        }
+
+        const events = new EventEmitter();
+        const api = new Api(API_URL);
+
+        // Модели
+        const productModel = new ProductModel(events);
+        const cartModel = new CartModel(events);
+        const orderModel = new OrderModel(events);
+        
+
+        // View
+        const catalogView = new CatalogView(gallery as HTMLElement, events);
+        const cartView = new CartView(basket as HTMLElement, events);
+        const orderView = new OrderView(orderForm as HTMLElement, events);
+        const modalView = new ModalView(modalContainer as HTMLElement, events);
+
+        // Создаем ProductModalView из шаблона
+      const productModalTemplate = document.querySelector('#card-preview') as HTMLTemplateElement;
+if (!productModalTemplate || !productModalTemplate.content) {
+    throw new Error('Template #card-preview or its content not found');
 }
-
-// Инициализация моделей
-const productModel = new ProductModel(events);
-const cartModel = new CartModel(events);
-const orderModel = new OrderModel(events);
-
-// Инициализация AppData
-const appData = new AppData(events, productModel, cartModel, orderModel);
-
-// Инициализация UI компонентов
-const page = new Page(pageElement as HTMLElement, events);
-const modal = new Modal(modalContainer as HTMLElement, events);
-
-// Создание экземпляра ProductModalView из шаблона
-const productModalContent = (
-	cardPreviewTemplate as HTMLTemplateElement
-).content.cloneNode(true) as DocumentFragment;
-const productModal = new ProductModalView(
-	productModalContent.firstElementChild as HTMLElement,
-	events
+const productModalView = new ProductModalView(
+    productModalTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement,
+    events
 );
 
-const cart = new Cart(basketElement as HTMLElement, events);
+        // Презентер
+        new AppPresenter(
+            events,
+            api,
+            productModel,
+            cartModel,
+            orderModel,
+            catalogView,
+            cartView,
+            orderView,
+            productModalView,
+            modalView
+        );
 
-// Обработчик закрытия модального окна
-(modalCloseButton as HTMLElement).addEventListener('click', () => {
-	events.emit('modal:close');
-});
-
-// Загрузка товаров
-appData
-	.loadProducts()
-	.then(() => {
-		const products = productModel.getProducts();
-		updateProductList(products);
-	})
-	.catch((error) => {
-		console.error('Ошибка загрузки товаров:', error);
-	});
-
-// Функция обновления списка товаров
-function updateProductList(products: ProductFormatted[]) {
-	(galleryElement as HTMLElement).innerHTML = '';
-
-	products.forEach((product) => {
-		const cardElement = (
-			cardCatalogTemplate as HTMLTemplateElement
-		).content.cloneNode(true) as DocumentFragment;
-		const card = new ProductCard(
-			cardElement.firstElementChild as HTMLElement,
-			events
-		);
-		const renderedCard = card.render(product);
-		(galleryElement as HTMLElement).appendChild(renderedCard);
-	});
-}
-
-// Обработчики событий
-events.on('products:changed', (data: { products: ProductFormatted[] }) => {
-	updateProductList(data.products);
-});
-
-events.on('cart:changed', () => {
-	page.setCounter(cartModel.getTotal());
-});
-
-events.on('product:select', (data: { id: string }) => {
-	const product = productModel.getProductById(data.id);
-	if (product) {
-		const inCart = cartModel
-			.getItems()
-			.some((item) => item.product.id === data.id);
-		const modalContent = modalContainer.querySelector(
-			'.modal__content'
-		) as HTMLElement;
-		modalContent.innerHTML = '';
-		modalContent.appendChild(
-			productModal.render({
-				product,
-				inCart,
-				open: function (product: Product, inCart: boolean): void {
-					throw new Error('Function not implemented.');
-				},
-			})
-		);
-		modal.open();
-	}
-});
-
-events.on('cart:open', () => {
-	const modalContent = modalContainer.querySelector(
-		'.modal__content'
-	) as HTMLElement;
-	modalContent.innerHTML = '';
-	modalContent.appendChild(
-		cart.render({
-			items: cartModel.getItems(),
-			total: cartModel.getTotal(),
-		})
-	);
-	modal.open();
-});
-
-events.on('modal:close', () => {
-	modal.close();
+    } catch (error) {
+        console.error('Application initialization failed:', error);
+        // Показать ошибку пользователю
+        const errorDiv = document.createElement('div');
+        errorDiv.style.color = 'red';
+        errorDiv.style.padding = '20px';
+        errorDiv.textContent = `Ошибка загрузки: ${(error as Error).message}`;
+        document.body.prepend(errorDiv);
+    }
 });

@@ -1,4 +1,5 @@
-// src/models/OrderModel.ts
+// src/models/OrderModel.ts (Модель заказа)
+
 import { Api } from '../components/base/api';
 import { EventEmitter } from '../components/base/events';
 import { API_URL } from '../utils/constants';

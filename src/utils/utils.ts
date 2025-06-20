@@ -31,29 +31,28 @@ export function ensureAllElements<T extends HTMLElement>(
 export type SelectorElement<T> = T | string;
 
 export function ensureElement<T extends HTMLElement>(
-	selectorElement: SelectorElement<T>,
-	context?: HTMLElement
+    selector: string,
+    context: HTMLElement = document.body
 ): T {
-	if (isSelector(selectorElement)) {
-		const elements = ensureAllElements<T>(selectorElement, context);
-		if (elements.length > 1) {
-			console.warn(`selector ${selectorElement} return more then one element`);
-		}
-		if (elements.length === 0) {
-			throw new Error(`selector ${selectorElement} return nothing`);
-		}
-		return elements.pop() as T;
-	}
-	if (selectorElement instanceof HTMLElement) {
-		return selectorElement as T;
-	}
-	throw new Error('Unknown selector element');
+    const elements = context.querySelectorAll(selector);
+    
+    if (elements.length === 0) {
+        console.error('Available elements in context:', 
+            Array.from(context.children).map(el => el.outerHTML));
+        throw new Error(`Element "${selector}" not found in context`);
+    }
+    
+    if (elements.length > 1) {
+        console.warn(`Multiple elements (${elements.length}) found for "${selector}", using first`);
+    }
+    
+    return elements[0] as T;
 }
 
 export function cloneTemplate<T extends HTMLElement>(
 	query: string | HTMLTemplateElement
 ): T {
-	const template = ensureElement(query) as HTMLTemplateElement;
+	const template = ensureElement as unknown as HTMLTemplateElement;
 	return template.content.firstElementChild.cloneNode(true) as T;
 }
 

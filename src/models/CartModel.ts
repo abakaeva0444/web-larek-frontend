@@ -1,3 +1,5 @@
+// src/models/CartModel.ts (Модель корзины)
+
 import { EventEmitter } from '../components/base/events';
 import { ProductFormatted, CartItem } from '../types';
 
@@ -54,7 +56,13 @@ export class CartModel {
 
 	isEmpty(): boolean {
 		return this.items.length === 0;
-	}
+
+		}
+
+		hasProduct(id: string): boolean {
+        return this.items.some(item => item.product.id === id);
+}
+
 }
 
 export { CartItem };
