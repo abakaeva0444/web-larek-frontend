@@ -1,54 +1,82 @@
-// Компонент корзины (src/components/Cart.ts)
+import { View } from "../components/base/view";
+import { ICartItem } from "../types";
+import { EventEmitter } from "../components/base/events";
 
-import { View } from '../components/base/view';
-import { cloneTemplate, ensureElement } from '../utils/utils';
-import { CartItem } from '../types';
-import { EventEmitter } from '../components/base/events';
-
-export class CartView extends View<{ items: CartItem[], total: number }> {
+export class CartView extends View<{items: ICartItem[], total: number}> {
+    protected modal: HTMLElement;
     protected list: HTMLElement;
     protected total: HTMLElement;
-    protected button: HTMLButtonElement;
-    itemsList: HTMLUListElement;
-    price: HTMLSpanElement;
+    protected checkoutButton: HTMLElement;
+    protected closeButton: HTMLElement;
 
-    constructor(container: HTMLElement, events: EventEmitter) {
-        const basketTemplate = document.querySelector('#basket') as HTMLTemplateElement;
-        const basketElement = cloneTemplate<HTMLDivElement>(basketTemplate);
-        container.appendChild(basketElement);
+    constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
-        this.itemsList = ensureElement<HTMLUListElement>('.basket .basket__list', this.container);
-        this.price = ensureElement<HTMLSpanElement>('.basket .basket__price', this.container);
-        this.button = ensureElement<HTMLButtonElement>('.basket__button',container);
         
-        this.button.addEventListener('click', () => {
-            events.emit('order:open');
+        // Находим модальное окно корзины (3-е по порядку)
+        this.modal = document.querySelectorAll('.modal')[2] as HTMLElement;
+        this.list = this.modal.querySelector('.basket__list')!;
+        this.total = this.modal.querySelector('.basket__price')!;
+        this.checkoutButton = this.modal.querySelector('.button')!;
+        this.closeButton = this.modal.querySelector('.modal__close')!;
+
+        // Сразу скрываем окно
+        this.modal.classList.remove('modal_active');
+
+        this.setupEventListeners();
+    }
+
+    private setupEventListeners() {
+        // Обработчик кнопки "Оформить"
+        this.checkoutButton.addEventListener('click', () => {
+            this.events.emit('order:start');
         });
 
-        this.list.addEventListener('click', (e: Event) => {
-            const target = e.target as HTMLElement;
-            const deleteButton = target.closest('.basket__item-delete');
-            if (deleteButton) {
-                const item = deleteButton.closest<HTMLElement>('[data-id]');
-                if (item && item.dataset.id) {
-                    events.emit('cart:remove', { id: item.dataset.id });
-                }
+        // Обработчик закрытия по крестику
+        this.closeButton.addEventListener('click', () => {
+            this.close();
+        });
+
+        // Обработчик закрытия по клику вне окна
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
             }
         });
     }
 
-    render({ items, total }: { items: CartItem[]; total: number }): HTMLElement {
-        this.list.innerHTML = items.map((item, index) => `
-            <li class="basket__item" data-id="${item.product.id}">
-                <span class="basket__item-index">${index + 1}</span>
-                <span class="card__title">${item.product.title}</span>
-                <span class="card__price">${item.product.priceFormatted}</span>
-                <button class="basket__item-delete" aria-label="удалить"></button>
-            </li>
-        `).join('');
+    render(data: {items: ICartItem[], total: number}): HTMLElement {
+        this._data = data;
+        this.list.innerHTML = '';
         
-        this.total.textContent = `${total} синапсов`;
-        this.button.disabled = items.length === 0;
+        // Заполняем список товаров
+        const template = document.getElementById('card-basket') as HTMLTemplateElement;
+        data.items.forEach((item, index) => {
+            const card = template.content.cloneNode(true) as HTMLElement;
+            const li = card.querySelector('li')!;
+            
+            li.querySelector('.card__title')!.textContent = item.product.title;
+            li.querySelector('.card__price')!.textContent = `${item.product.price} синапсов`;
+            li.querySelector('.basket__item-index')!.textContent = String(index + 1);
+            
+            // Обработчик кнопки удаления
+            li.querySelector('.basket__item-delete')!.addEventListener('click', () => {
+                this.events.emit('cart:remove', { id: item.product.id });
+            });
+
+            this.list.appendChild(card);
+        });
+
+        // Обновляем общую сумму
+        this.total.textContent = `${data.total} синапсов`;
+        
         return this.container;
+    }
+
+    open(): void {
+        this.modal.classList.add('modal_active');
+    }
+
+    close(): void {
+        this.modal.classList.remove('modal_active');
     }
 }

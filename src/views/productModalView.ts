@@ -1,41 +1,72 @@
-// src/views/productModalView.ts ()
+import { View } from "../components/base/view";
+import { IProduct } from "../types";
+import { EventEmitter } from "../components/base/events";
 
-import { View } from '../components/base/view';
-import { ensureElement } from '../utils/utils';
-import { ProductFormatted } from '../types';
-import { EventEmitter } from '../components/base/events';
+export class ProductModalView extends View<IProduct> {
+    protected modal: HTMLElement;
+    protected closeButton: HTMLElement;
+    protected contentContainer: HTMLElement;
 
-export class ProductModalView extends View<ProductFormatted> {
-    protected image: HTMLImageElement;
-    protected title: HTMLElement;
-    protected description: HTMLElement;
-    protected price: HTMLElement;
-    protected addButton: HTMLButtonElement;
-
-    constructor(container: HTMLElement, events: EventEmitter) {
+    constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
         
-        this.image = ensureElement<HTMLImageElement>('.card__image', container);
-        this.title = ensureElement<HTMLElement>('.card__title', container);
-        this.description = ensureElement<HTMLElement>('.card__text', container);
-        this.price = ensureElement<HTMLElement>('.card__price', container);
-        this.addButton = ensureElement<HTMLButtonElement>('.card__button', container);
+        // Находим модальное окно по ID
+        this.modal = document.getElementById('modal-container')!;
+        this.closeButton = this.modal.querySelector('.modal__close')!;
+        this.contentContainer = this.modal.querySelector('.modal__content')!;
 
-        this.addButton.addEventListener('click', () => {
-            if (this.container.dataset.id) {
-                events.emit('cart:add', { id: this.container.dataset.id });
+        // Закрываем изначально открытое окно
+        this.modal.classList.remove('modal_active');
+
+        this.setupEventListeners();
+    }
+
+    private setupEventListeners() {
+        // Обработчик закрытия по крестику
+        this.closeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.close();
+        });
+
+        // Обработчик закрытия по клику вне окна
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
             }
         });
     }
 
-    render(data: ProductFormatted): HTMLElement {
-        this.container.dataset.id = data.id;
-        this.image.src = data.imageUrl;
-        this.image.alt = data.title;
-        this.title.textContent = data.title;
-        this.description.textContent = data.description;
-        this.price.textContent = data.priceFormatted;
+    render(data: IProduct): HTMLElement {
+        this._data = data;
+        
+        // Заполняем контент из шаблона
+        const template = document.getElementById('card-preview') as HTMLTemplateElement;
+        const content = template.content.cloneNode(true) as HTMLElement;
+        
+        // Заполняем данные
+        content.querySelector('.card__title')!.textContent = data.title;
+        content.querySelector('.card__text')!.textContent = data.description;
+        content.querySelector('.card__price')!.textContent = `${data.price} синапсов`;
+        (content.querySelector('.card__image') as HTMLImageElement).src = data.image;
 
+        // Обработчик кнопки "В корзину"
+        const addButton = content.querySelector('.card__button')!;
+        addButton.addEventListener('click', () => {
+            this.events.emit('cart:add', { product: data });
+            this.close();
+        });
+
+        // Очищаем и добавляем новый контент
+        this.contentContainer.innerHTML = '';
+        this.contentContainer.appendChild(content);
+        
+        // Показываем модальное окно
+        this.modal.classList.add('modal_active');
+        
         return this.container;
+    }
+
+    close(): void {
+        this.modal.classList.remove('modal_active');
     }
 }

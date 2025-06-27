@@ -1,77 +1,37 @@
-// src/models/OrderModel.ts (Модель заказа)
-
-import { Api } from '../components/base/api';
-import { EventEmitter } from '../components/base/events';
-import { API_URL } from '../utils/constants';
-import { Order, PaymentMethod, CartItem } from '../types';
+import { Api } from "../components/base/api";
+import { IOrder } from "../types";
+import { EventEmitter } from "../components/base/events";
 
 export class OrderModel {
-	private api: Api;
-	private eventEmitter: EventEmitter;
-	private order: Partial<Order> = {};
+    private _order: Partial<IOrder> = {};
 
-	constructor(eventEmitter: EventEmitter) {
-		this.api = new Api(API_URL);
-		this.eventEmitter = eventEmitter;
-	}
+    constructor(protected api: Api, protected events: EventEmitter) {}
 
-	setPaymentMethod(method: PaymentMethod): void {
-		this.order.payment = method;
-		this.validateOrder();
-	}
+    setPaymentMethod(method: string): void {
+        this._order.payment = method;
+        this.validateOrder();
+    }
 
-	setContactInfo(email: string, phone: string): void {
-		this.order.email = email;
-		this.order.phone = phone;
-		this.validateOrder();
-	}
+    setAddress(address: string): void {
+        this._order.address = address;
+        this.validateOrder();
+    }
 
-	setDeliveryAddress(address: string): void {
-		this.order.address = address;
-		this.validateOrder();
-	}
+    setContacts(email: string, phone: string): void {
+        this._order.email = email;
+        this._order.phone = phone;
+        this.validateOrder();
+    }
 
-	async submitOrder(cartItems: CartItem[]): Promise<void> {
-		if (!this.isOrderValid()) {
-			throw new Error('Order is not valid');
-		}
+    private validateOrder(): void {
+        const isValid = !!this._order.payment && !!this._order.address && 
+                       !!this._order.email && !!this._order.phone;
+        this.events.emit('order:ready', { isValid });
+    }
 
-		this.order.items = cartItems.map((item) => item.product.id);
-		this.order.total = this.calculateTotal(cartItems);
-
-		try {
-			const response = await this.api.post('/order', this.order);
-			this.eventEmitter.emit('order:success', { order: this.order, response });
-			this.resetOrder();
-		} catch (error) {
-			this.eventEmitter.emit('order:error', { error });
-			throw error;
-		}
-	}
-
-	private calculateTotal(cartItems: CartItem[]): number {
-		return cartItems.reduce((sum, item) => {
-			return sum + (item.product.price || 0) * item.quantity;
-		}, 0);
-	}
-
-	private validateOrder(): void {
-		this.eventEmitter.emit('order:ready', {
-			isValid: this.isOrderValid(),
-			order: this.order,
-		});
-	}
-
-	private isOrderValid(): boolean {
-		return (
-			!!this.order.payment &&
-			!!this.order.email &&
-			!!this.order.phone &&
-			!!this.order.address
-		);
-	}
-
-	private resetOrder(): void {
-		this.order = {};
-	}
+    async submitOrder(items: string[], total: number): Promise<{ id: string }> {
+        this._order.items = items;
+        this._order.total = total;
+        return await this.api.post('/order', this._order as IOrder) as { id: string };
+    }
 }
