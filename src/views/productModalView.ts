@@ -1,6 +1,7 @@
 import { View } from "../components/base/view";
 import { IProduct } from "../types";
 import { EventEmitter } from "../components/base/events";
+import { CDN_URL } from '../utils/constants'; // <-- Импортируем CDN_URL
 
 export class ProductModalView extends View<IProduct> {
     protected modal: HTMLElement;
@@ -47,7 +48,11 @@ export class ProductModalView extends View<IProduct> {
         content.querySelector('.card__title')!.textContent = data.title;
         content.querySelector('.card__text')!.textContent = data.description;
         content.querySelector('.card__price')!.textContent = `${data.price} синапсов`;
-        (content.querySelector('.card__image') as HTMLImageElement).src = data.image;
+
+        // --- Исправленная строчка для src изображения ---
+        const imageUrl = `${CDN_URL}/${data.image}`;
+        (content.querySelector('.card__image') as HTMLImageElement).src = imageUrl;
+        // ----------------------------------------------
 
         // Обработчик кнопки "В корзину"
         const addButton = content.querySelector('.card__button')!;

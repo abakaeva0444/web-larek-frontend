@@ -1,5 +1,3 @@
-// Generated using webpack-cli https://github.com/webpack/webpack-cli
-
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -10,7 +8,7 @@ require('dotenv').config({
   path: path.join(process.cwd(), process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env')
 });
 
-const isProduction = process.env.NODE_ENV == "production";
+const isProduction = process.env.NODE_ENV === "production";
 
 const stylesHandler = MiniCssExtractPlugin.loader;
 
@@ -19,12 +17,14 @@ const config = {
   devtool: "source-map",
   output: {
     path: path.resolve(__dirname, "dist"),
+    publicPath: '/', // Важно! Добавляем publicPath
   },
   devServer: {
     open: true,
     host: "localhost",
     watchFiles: ["src/pages/*.html"],
-    hot: true
+    hot: true,
+    historyApiFallback: true, // Важно для SPA роутинга
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -33,11 +33,9 @@ const config = {
 
     new MiniCssExtractPlugin(),
 
-    // Add your plugins here
-    // Learn more about plugins from https://webpack.js.org/configuration/plugins/
     new DefinePlugin({
       'process.env.DEVELOPMENT': !isProduction,
-      'process.env.API_ORIGIN': JSON.stringify(process.env.API_ORIGIN ?? '')
+      'process.env.API_ORIGIN': JSON.stringify(process.env.API_ORIGIN || ''), // Добавил || ''
     })
   ],
   module: {
@@ -64,22 +62,17 @@ const config = {
         use: [stylesHandler, "css-loader", "postcss-loader"],
       },
       {
-        test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
+        test: /\.(eot|ttf|woff|woff2)$/i, // Убрал svg, png, jpg, gif отсюда
         type: "asset",
       },
-      
+
       {
-      test: /\.(svg|png|jpg|jpeg|gif)$/i,
-      use: [
-        {
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: 'images/',
-          },
+        test: /\.(svg|png|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',  // Используем asset/resource
+        generator: {
+          filename: 'images/[name][ext]',  // Указываем путь для вывода файлов
         },
-      ],
-    },
+      },
 
       // Add your rules for custom modules here
       // Learn more about loaders from https://webpack.js.org/loaders/
@@ -89,14 +82,15 @@ const config = {
     extensions: [".tsx", ".ts", ".jsx", ".js", "..."],
   },
   optimization: {
-    minimize: true,
+    minimize: isProduction, // Минимизируем только в production
     minimizer: [new TerserPlugin({
       terserOptions: {
         keep_classnames: true,
-        keep_fnames: true
-      }
-    })]
-  }
+        keep_fnames: true,
+        compress: isProduction, // Добавляем compress для TerserPlugin
+      },
+    })],
+  },
 };
 
 module.exports = () => {
