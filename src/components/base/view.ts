@@ -1,22 +1,32 @@
+// src/components/base/view.ts
 import { EventEmitter } from './events';
+import { ensureElement } from '../../utils/utils';
 
-export abstract class View<T> {
+export class View<T = {}> {
+    protected _data: T | undefined;
     protected container: HTMLElement;
     protected events: EventEmitter;
-    protected _data: T;
 
     constructor(container: HTMLElement, events: EventEmitter) {
         this.container = container;
         this.events = events;
     }
-
-    abstract render(data?: T): HTMLElement;
-
-    protected setDisabled(element: HTMLElement, state: boolean): void {
-        if (state) {
-            element.setAttribute('disabled', 'disabled');
-        } else {
-            element.removeAttribute('disabled');
+ protected setupCloseButton(): void {
+    const modalContainer = this.container.closest('.modal__container');
+    if (modalContainer) {
+        const closeButton = modalContainer.querySelector('.modal__close');
+         if (closeButton) {
+            console.log('Кнопка закрытия найдена'); // Добавлено
+            closeButton.addEventListener('click', () => {
+                this.close();
+            });
+        }
+    }
+}
+    public close(): void { // Изменили видимость
+        const modalElement = this.container.closest('.modal') as HTMLElement;
+        if (modalElement) {
+            modalElement.style.display = 'none'; // Скрываем модальное окно
         }
     }
 }

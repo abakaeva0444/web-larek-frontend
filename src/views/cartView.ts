@@ -1,26 +1,30 @@
+// CartView.ts
 import { View } from "../components/base/view";
 import { ICartItem } from "../types";
 import { EventEmitter } from "../components/base/events";
+import { ensureElement } from "../utils/utils";
 
-export class CartView extends View<{items: ICartItem[], total: number}> {
+export class CartView extends View<{ items: ICartItem[]; total: number }> {
     protected modal: HTMLElement;
     protected list: HTMLElement;
     protected total: HTMLElement;
-    protected checkoutButton: HTMLElement;
+    protected checkoutButton: HTMLButtonElement;
     protected closeButton: HTMLElement;
 
     constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
-        
+
         // Находим модальное окно корзины (3-е по порядку)
         this.modal = document.querySelectorAll('.modal')[2] as HTMLElement;
-        this.list = this.modal.querySelector('.basket__list')!;
-        this.total = this.modal.querySelector('.basket__price')!;
-        this.checkoutButton = this.modal.querySelector('.button')!;
-        this.closeButton = this.modal.querySelector('.modal__close')!;
+        this.list = ensureElement<HTMLElement>('.basket__list', this.modal);
+        this.total = ensureElement<HTMLElement>('.basket__price', this.modal);
+        this.checkoutButton = ensureElement<HTMLButtonElement>('.button', this.modal); // Используем .button
+        this.closeButton = ensureElement<HTMLElement>('.modal__close', this.modal);
+
+        console.log('CartView checkoutButton:', this.checkoutButton);
 
         // Сразу скрываем окно
-        this.modal.classList.remove('modal_active');
+        this.modal.style.display = 'none'; // Скрываем модальное окно
 
         this.setupEventListeners();
     }
@@ -28,6 +32,7 @@ export class CartView extends View<{items: ICartItem[], total: number}> {
     private setupEventListeners() {
         // Обработчик кнопки "Оформить"
         this.checkoutButton.addEventListener('click', () => {
+            console.log('emitting order:start event');
             this.events.emit('order:start');
         });
 
@@ -42,41 +47,50 @@ export class CartView extends View<{items: ICartItem[], total: number}> {
                 this.close();
             }
         });
+
+        // Обработчик события для кнопок “Удалить”
+this.list.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement; // Приводим к HTMLElement
+    const id = (target.closest('.basket__item') as HTMLLIElement)?.dataset.id; // используем HTMLLIElement
+    if (!id) {
+        return;
+    }
+    this.events.emit('cart:remove', { id });
+});
     }
 
-    render(data: {items: ICartItem[], total: number}): HTMLElement {
+
+    render(data: { items: ICartItem[]; total: number }): HTMLElement {
         this._data = data;
         this.list.innerHTML = '';
-        
-        // Заполняем список товаров
-        const template = document.getElementById('card-basket') as HTMLTemplateElement;
-        data.items.forEach((item, index) => {
-            const card = template.content.cloneNode(true) as HTMLElement;
-            const li = card.querySelector('li')!;
-            
-            li.querySelector('.card__title')!.textContent = item.product.title;
-            li.querySelector('.card__price')!.textContent = `${item.product.price} синапсов`;
-            li.querySelector('.basket__item-index')!.textContent = String(index + 1);
-            
-            // Обработчик кнопки удаления
-            li.querySelector('.basket__item-delete')!.addEventListener('click', () => {
-                this.events.emit('cart:remove', { id: item.product.id });
-            });
 
-            this.list.appendChild(card);
+        if (!data.items.length) {
+            this.list.innerHTML = 'Корзина пуста';
+            return this.container;
+        }
+        // Заполняем список товаров
+        data.items.forEach((item, index) => {
+            this.list.innerHTML += `
+            <li class="basket__item card card_compact" data-id="${item.product.id}">
+                <span class="basket__item-index">${index + 1}</span>
+                <span class="card__title">${item.product.title}</span>
+                <span class="card__price">${item.product.price} синапсов</span>
+                <button class="basket__item-delete" aria-label="удалить"></button>
+            </li>
+            `;
         });
 
         // Обновляем общую сумму
         this.total.textContent = `${data.total} синапсов`;
-        
+
         return this.container;
     }
 
     open(): void {
-        this.modal.classList.add('modal_active');
+        this.modal.style.display = 'block'; // Отображаем модальное окно
     }
 
     close(): void {
-        this.modal.classList.remove('modal_active');
+        this.modal.style.display = 'none'; // Скрываем модальное окно
     }
 }

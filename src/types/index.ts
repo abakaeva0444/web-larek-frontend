@@ -2,11 +2,10 @@ export interface IProduct {
     id: string;
     title: string;
     description: string;
-    price: number | null;
+    price: number; // Изменено: price: number
     category: string;
     image: string;
 }
-
 
 export interface ICartItem {
     product: IProduct;
@@ -18,7 +17,7 @@ export interface IOrder {
     address: string;
     email: string;
     phone: string;
-    items: string[];
+    items: ICartItem[]; // Изменено: items: ICartItem[];
     total: number;
 }
 
@@ -26,4 +25,3 @@ export type ApiListResponse<T> = {
     total: number;
     items: T[];
 };
-

@@ -1,35 +1,43 @@
+// ProductModalView.ts
 import { View } from "../components/base/view";
 import { IProduct } from "../types";
 import { EventEmitter } from "../components/base/events";
-import { CDN_URL } from '../utils/constants'; // <-- Импортируем CDN_URL
+import { CDN_URL } from '../utils/constants';
+import { ensureElement, cloneTemplate } from '../utils/utils'; // Импортируем cloneTemplate
 
 export class ProductModalView extends View<IProduct> {
     protected modal: HTMLElement;
     protected closeButton: HTMLElement;
     protected contentContainer: HTMLElement;
+    private button: HTMLButtonElement | null = null;
+    public inCart: boolean = false;
+    private product: IProduct | null = null;
 
     constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
-        
-        // Находим модальное окно по ID
+
         this.modal = document.getElementById('modal-container')!;
         this.closeButton = this.modal.querySelector('.modal__close')!;
         this.contentContainer = this.modal.querySelector('.modal__content')!;
 
-        // Закрываем изначально открытое окно
-        this.modal.classList.remove('modal_active');
+        this.modal.style.display = 'none';
 
         this.setupEventListeners();
     }
 
+    setInCart(value: boolean) {
+        this.inCart = value;
+        if (this.button) {
+            this.button.textContent = this.inCart ? 'Убрать из корзины' : 'В корзину';
+        }
+    }
+
     private setupEventListeners() {
-        // Обработчик закрытия по крестику
         this.closeButton.addEventListener('click', (e) => {
             e.preventDefault();
             this.close();
         });
 
-        // Обработчик закрытия по клику вне окна
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
                 this.close();
@@ -37,41 +45,38 @@ export class ProductModalView extends View<IProduct> {
         });
     }
 
-    render(data: IProduct): HTMLElement {
-        this._data = data;
-        
-        // Заполняем контент из шаблона
+    render(product: IProduct): HTMLElement {
+        this.product = product;
+        this.contentContainer.innerHTML = '';
         const template = document.getElementById('card-preview') as HTMLTemplateElement;
         const content = template.content.cloneNode(true) as HTMLElement;
-        
-        // Заполняем данные
-        content.querySelector('.card__title')!.textContent = data.title;
-        content.querySelector('.card__text')!.textContent = data.description;
-        content.querySelector('.card__price')!.textContent = `${data.price} синапсов`;
+        const imageUrl = `${CDN_URL}/${product.image}`;
 
-        // --- Исправленная строчка для src изображения ---
-        const imageUrl = `${CDN_URL}/${data.image}`;
         (content.querySelector('.card__image') as HTMLImageElement).src = imageUrl;
-        // ----------------------------------------------
+        (content.querySelector('.card__title') as HTMLElement).textContent = product.title;
+        (content.querySelector('.card__text') as HTMLElement).textContent = product.description;
+        (content.querySelector('.card__price') as HTMLElement).textContent = `${product.price} синапсов`;
 
-        // Обработчик кнопки "В корзину"
-        const addButton = content.querySelector('.card__button')!;
-        addButton.addEventListener('click', () => {
-            this.events.emit('cart:add', { product: data });
-            this.close();
-        });
+        this.button = ensureElement<HTMLButtonElement>('.card__row .button', content); // Используем content
+        this.button.textContent = this.inCart ? 'Убрать из корзины' : 'В корзину';
+        this.setupButtonListener(product);
 
-        // Очищаем и добавляем новый контент
-        this.contentContainer.innerHTML = '';
         this.contentContainer.appendChild(content);
-        
-        // Показываем модальное окно
-        this.modal.classList.add('modal_active');
-        
+        this.modal.style.display = 'block';
         return this.container;
     }
 
+    private setupButtonListener(product: IProduct) {
+        if (this.button) {
+            this.button.addEventListener('click', () => {
+                if (product) {
+                  this.events.emit(this.inCart ? 'cart:remove' : 'cart:add', { product: product });
+                }
+            });
+        }
+    }
+
     close(): void {
-        this.modal.classList.remove('modal_active');
+        this.modal.style.display = 'none';
     }
 }
