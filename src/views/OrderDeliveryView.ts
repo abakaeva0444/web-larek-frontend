@@ -63,13 +63,13 @@ private handlePaymentSelect(button: HTMLButtonElement) {
         payment: button.name
     };
     this.validateForm();
-    console.log('Выбран способ оплаты:', button.name); // Добавляем
+    console.log('Выбран способ оплаты:', button.name); 
 }
 
 private handleAddressInput() {
     this._data = {
         ...this._data,
-        address: this.addressInput!.value // Мы уверены, что addressInput существует
+        address: this.addressInput!.value 
     };
     this.validateForm();
 }
@@ -102,7 +102,7 @@ private validateForm() {
 
         if (modalElement) {
             console.log('Modal element found:', modalElement);
-            modalElement.style.display = 'block'; // Отображаем модальное окно
+            modalElement.style.display = 'block'; 
         } else {
             console.error('Modal element not found!');
         }

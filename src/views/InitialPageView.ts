@@ -1,7 +1,7 @@
 import { View } from "../components/base/view";
-import { IProduct } from "../types"; // Убедитесь, что путь к IProduct верный
+import { IProduct } from "../types"; 
 import { EventEmitter } from "../components/base/events";
-import { CDN_URL } from '../utils/constants'; // <-- Импортируем CDN_URL
+import { CDN_URL } from '../utils/constants'; //
 
 export class InitialPageView extends View<IProduct[]> {
     protected gallery: HTMLElement;
@@ -24,13 +24,10 @@ export class InitialPageView extends View<IProduct[]> {
 
         products.forEach(product => {
             const card = template.content.cloneNode(true) as HTMLElement;
-            const cardElement = card.querySelector('.gallery__item')! as HTMLElement; // Переименовал для ясности
+            const cardElement = card.querySelector('.gallery__item')! as HTMLElement; 
 
-            // --- Исправленная строчка для src изображения ---
             const imageUrl = `${CDN_URL}/${product.image}`;
             (cardElement.querySelector('.card__image') as HTMLImageElement).src = imageUrl;
-            // ----------------------------------------------
-
             cardElement.querySelector('.card__title')!.textContent = product.title;
             cardElement.querySelector('.card__price')!.textContent = `${product.price} синапсов`;
             cardElement.querySelector('.card__category')!.textContent = product.category;
@@ -40,7 +37,7 @@ export class InitialPageView extends View<IProduct[]> {
                 this.events.emit('product:select', { product });
             });
 
-            this.gallery.appendChild(cardElement); // Добавляем заполненный элемент
+            this.gallery.appendChild(cardElement); 
         });
 
         return this.container;

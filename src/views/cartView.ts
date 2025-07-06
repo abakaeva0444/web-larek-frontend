@@ -1,4 +1,3 @@
-// CartView.ts
 import { View } from "../components/base/view";
 import { ICartItem } from "../types";
 import { EventEmitter } from "../components/base/events";
@@ -14,17 +13,16 @@ export class CartView extends View<{ items: ICartItem[]; total: number }> {
     constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
 
-        // Находим модальное окно корзины (3-е по порядку)
         this.modal = document.querySelectorAll('.modal')[2] as HTMLElement;
         this.list = ensureElement<HTMLElement>('.basket__list', this.modal);
         this.total = ensureElement<HTMLElement>('.basket__price', this.modal);
-        this.checkoutButton = ensureElement<HTMLButtonElement>('.button', this.modal); // Используем .button
+        this.checkoutButton = ensureElement<HTMLButtonElement>('.button', this.modal); 
         this.closeButton = ensureElement<HTMLElement>('.modal__close', this.modal);
 
         console.log('CartView checkoutButton:', this.checkoutButton);
 
-        // Сразу скрываем окно
-        this.modal.style.display = 'none'; // Скрываем модальное окно
+       
+        this.modal.style.display = 'none'; 
 
         this.setupEventListeners();
     }
@@ -50,8 +48,8 @@ export class CartView extends View<{ items: ICartItem[]; total: number }> {
 
         // Обработчик события для кнопок “Удалить”
 this.list.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement; // Приводим к HTMLElement
-    const id = (target.closest('.basket__item') as HTMLLIElement)?.dataset.id; // используем HTMLLIElement
+    const target = e.target as HTMLElement; 
+    const id = (target.closest('.basket__item') as HTMLLIElement)?.dataset.id; 
     if (!id) {
         return;
     }
@@ -87,10 +85,10 @@ this.list.addEventListener('click', (e) => {
     }
 
     open(): void {
-        this.modal.style.display = 'block'; // Отображаем модальное окно
+        this.modal.style.display = 'block'; 
     }
 
     close(): void {
-        this.modal.style.display = 'none'; // Скрываем модальное окно
+        this.modal.style.display = 'none'; 
     }
 }

@@ -2,7 +2,7 @@ export interface IProduct {
     id: string;
     title: string;
     description: string;
-    price: number; // Изменено: price: number
+    price: number; 
     category: string;
     image: string;
 }
@@ -17,7 +17,7 @@ export interface IOrder {
     address: string;
     email: string;
     phone: string;
-    items: ICartItem[]; // Изменено: items: ICartItem[];
+    items: ICartItem[]; 
     total: number;
 }
 

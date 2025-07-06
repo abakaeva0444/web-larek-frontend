@@ -3,7 +3,7 @@ import { View } from "../components/base/view";
 import { IProduct } from "../types";
 import { EventEmitter } from "../components/base/events";
 import { CDN_URL } from '../utils/constants';
-import { ensureElement, cloneTemplate } from '../utils/utils'; // Импортируем cloneTemplate
+import { ensureElement, cloneTemplate } from '../utils/utils'; 
 
 export class ProductModalView extends View<IProduct> {
     protected modal: HTMLElement;
@@ -57,7 +57,7 @@ export class ProductModalView extends View<IProduct> {
         (content.querySelector('.card__text') as HTMLElement).textContent = product.description;
         (content.querySelector('.card__price') as HTMLElement).textContent = `${product.price} синапсов`;
 
-        this.button = ensureElement<HTMLButtonElement>('.card__row .button', content); // Используем content
+        this.button = ensureElement<HTMLButtonElement>('.card__row .button', content); 
         this.button.textContent = this.inCart ? 'Убрать из корзины' : 'В корзину';
         this.setupButtonListener(product);
 

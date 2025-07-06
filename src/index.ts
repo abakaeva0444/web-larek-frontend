@@ -1,4 +1,3 @@
-// index.ts
 import './scss/styles.scss';
 import { Api } from './components/base/api';
 import { EventEmitter } from './components/base/events';
@@ -85,12 +84,11 @@ events.on('cart:remove', (event: { id: string }) => {
         });
 
         events.on('order:deliverySubmit', (data: { payment: string; address: string }) => {
-            console.log('Событие order:deliverySubmit получено:', data); // Добавляем
+            console.log('Событие order:deliverySubmit получено:', data); 
             orderModel.setPaymentMethod(data.payment);
             orderModel.setAddress(data.address);
-             console.log('orderPaymentView.render() вызван'); // Добавлено
-             // orderDeliveryView.close(); // Закрываем форму доставки (ВРЕМЕННО ЗАКОММЕНТИРОВАНО)
-            orderPaymentView.render(); // Показываем форму оплаты
+           orderDeliveryView.close();
+            orderPaymentView.render(); 
         });
 
         events.on('order:paymentSubmit', (data: { email: string; phone: string }) => {
@@ -108,7 +106,7 @@ events.on('cart:remove', (event: { id: string }) => {
             })
             .catch(error => {
                 console.error('Ошибка при отправке заказа:', error);
-                // TODO: Показать сообщение об ошибке пользователю
+                // Показать сообщение об ошибке пользователю
             });
         });
 

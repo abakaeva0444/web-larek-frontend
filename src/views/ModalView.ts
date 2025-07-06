@@ -1,5 +1,4 @@
 import { ensureElement } from '../utils/utils';
-
 export class ModalView {
     protected container: HTMLElement;
     protected contentContainer: HTMLElement;

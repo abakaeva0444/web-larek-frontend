@@ -16,8 +16,6 @@ export class OrderPaymentView extends View<IContactsForm> {
 
     constructor(container: HTMLElement, protected events: EventEmitter) {
         super(container, events);
-        console.log('Я Payment!!!')
-        // Клонируем шаблон
     }
     private setupEventListeners() {
         this.emailInput.addEventListener('input', () => {
@@ -54,7 +52,7 @@ export class OrderPaymentView extends View<IContactsForm> {
         } else if (!phoneValid) {
             this.errorsElement.textContent = 'Введите корректный номер телефона';
         } else {
-            this.errorsElement.textContent = ''; // Очищаем сообщение об ошибке
+            this.errorsElement.textContent = ''; 
         }
 
         return isValid;
@@ -77,7 +75,7 @@ export class OrderPaymentView extends View<IContactsForm> {
 
         if (modalElement) {
             console.log('Modal element found:', modalElement);
-            modalElement.style.display = 'block'; // Отображаем модальное окно
+            modalElement.style.display = 'block'; 
         } else {
             console.error('Modal element not found!');
         }

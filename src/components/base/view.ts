@@ -1,4 +1,3 @@
-// src/components/base/view.ts
 import { EventEmitter } from './events';
 import { ensureElement } from '../../utils/utils';
 
@@ -16,17 +15,16 @@ export class View<T = {}> {
     if (modalContainer) {
         const closeButton = modalContainer.querySelector('.modal__close');
          if (closeButton) {
-            console.log('Кнопка закрытия найдена'); // Добавлено
-            closeButton.addEventListener('click', () => {
+           closeButton.addEventListener('click', () => {
                 this.close();
             });
         }
     }
 }
-    public close(): void { // Изменили видимость
+    public close(): void { 
         const modalElement = this.container.closest('.modal') as HTMLElement;
         if (modalElement) {
-            modalElement.style.display = 'none'; // Скрываем модальное окно
+            modalElement.style.display = 'none'; 
         }
     }
 }
