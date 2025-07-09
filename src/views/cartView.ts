@@ -1,94 +1,98 @@
-import { View } from "../components/base/view";
-import { ICartItem } from "../types";
-import { EventEmitter } from "../components/base/events";
-import { ensureElement } from "../utils/utils";
+import { View } from '../components/base/view';
+import { ICartItem } from '../types';
+import { EventEmitter } from '../components/base/events';
+import { ensureElement } from '../utils/utils';
+import { CartItemView } from './CartItemView';
+import { ProductModel } from '../models/ProductModel';
 
 export class CartView extends View<{ items: ICartItem[]; total: number }> {
-    protected modal: HTMLElement;
-    protected list: HTMLElement;
-    protected total: HTMLElement;
-    protected checkoutButton: HTMLButtonElement;
-    protected closeButton: HTMLElement;
+	protected modal: HTMLElement;
+	protected list: HTMLElement;
+	protected total: HTMLElement;
+	protected checkoutButton: HTMLButtonElement;
+	protected closeButton: HTMLElement;
 
-    constructor(container: HTMLElement, protected events: EventEmitter) {
-        super(container, events);
+	constructor(
+		container: HTMLElement,
+		protected events: EventEmitter,
+		protected productModel: ProductModel
+	) {
+		super(container, events);
 
-        this.modal = document.querySelectorAll('.modal')[2] as HTMLElement;
-        this.list = ensureElement<HTMLElement>('.basket__list', this.modal);
-        this.total = ensureElement<HTMLElement>('.basket__price', this.modal);
-        this.checkoutButton = ensureElement<HTMLButtonElement>('.button', this.modal); 
-        this.closeButton = ensureElement<HTMLElement>('.modal__close', this.modal);
+		this.modal = document.querySelectorAll('.modal')[2] as HTMLElement;
+		this.list = ensureElement<HTMLElement>('.basket__list', this.modal);
+		this.total = ensureElement<HTMLElement>('.basket__price', this.modal);
+		this.checkoutButton = ensureElement<HTMLButtonElement>(
+			'.button',
+			this.modal
+		);
+		this.closeButton = ensureElement<HTMLElement>('.modal__close', this.modal);
+		this.modal.style.display = 'none';
 
-        console.log('CartView checkoutButton:', this.checkoutButton);
+		this.setupEventListeners();
+	}
 
-       
-        this.modal.style.display = 'none'; 
+	private setupEventListeners() {
+		this.checkoutButton.addEventListener('click', () => {
+			this.events.emit('order:start');
+		});
 
-        this.setupEventListeners();
-    }
+		this.closeButton.addEventListener('click', () => {
+			this.close();
+		});
 
-    private setupEventListeners() {
-        // Обработчик кнопки "Оформить"
-        this.checkoutButton.addEventListener('click', () => {
-            console.log('emitting order:start event');
-            this.events.emit('order:start');
-        });
+		this.modal.addEventListener('click', (e) => {
+			if (e.target === this.modal) {
+				this.close();
+			}
+		});
 
-        // Обработчик закрытия по крестику
-        this.closeButton.addEventListener('click', () => {
-            this.close();
-        });
+		// Обработчик события для кнопок “Удалить”
+		this.list.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
 
-        // Обработчик закрытия по клику вне окна
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) {
-                this.close();
-            }
-        });
+			if (target.classList.contains('basket__item-delete')) {
+				const basketItem = target.closest('.basket__item');
 
-        // Обработчик события для кнопок “Удалить”
-this.list.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement; 
-    const id = (target.closest('.basket__item') as HTMLLIElement)?.dataset.id; 
-    if (!id) {
-        return;
-    }
-    this.events.emit('cart:remove', { id });
-});
-    }
+				if (basketItem) {
+					const id = (basketItem as HTMLElement).dataset.id;
 
+					if (id) {
+						this.events.emit('cart:remove', { id });
+					}
+				}
+			}
+		});
+	}
 
-    render(data: { items: ICartItem[]; total: number }): HTMLElement {
-        this._data = data;
-        this.list.innerHTML = '';
+	async render(data: {
+		items: ICartItem[];
+		total: number;
+	}): Promise<HTMLElement> {
+		this._data = data;
+		this.list.innerHTML = '';
 
-        if (!data.items.length) {
-            this.list.innerHTML = 'Корзина пуста';
-            return this.container;
-        }
-        // Заполняем список товаров
-        data.items.forEach((item, index) => {
-            this.list.innerHTML += `
-            <li class="basket__item card card_compact" data-id="${item.product.id}">
-                <span class="basket__item-index">${index + 1}</span>
-                <span class="card__title">${item.product.title}</span>
-                <span class="card__price">${item.product.price} синапсов</span>
-                <button class="basket__item-delete" aria-label="удалить"></button>
-            </li>
-            `;
-        });
+		if (!data.items.length) {
+			this.list.innerHTML = 'Корзина пуста';
+			return this.container;
+		}
 
-        // Обновляем общую сумму
-        this.total.textContent = `${data.total} синапсов`;
+		for (const item of data.items) {
+			const itemView = new CartItemView(item, this.events, this.productModel);
+			const element = await itemView.render();
+			this.list.appendChild(element);
+		}
 
-        return this.container;
-    }
+		this.total.textContent = `${data.total} синапсов`;
 
-    open(): void {
-        this.modal.style.display = 'block'; 
-    }
+		return this.container;
+	}
 
-    close(): void {
-        this.modal.style.display = 'none'; 
-    }
+	open(): void {
+		this.modal.style.display = 'block';
+	}
+
+	close(): void {
+		this.modal.style.display = 'none';
+	}
 }

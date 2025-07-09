@@ -1,27 +1,27 @@
 export interface IProduct {
-    id: string;
-    title: string;
-    description: string;
-    price: number; 
-    category: string;
-    image: string;
+	id: string;
+	title: string;
+	description: string;
+	price: number;
+	category: string;
+	image: string;
 }
 
 export interface ICartItem {
-    product: IProduct;
-    quantity: number;
+	productId: string;
+	quantity: number;
 }
 
 export interface IOrder {
-    payment: string;
-    address: string;
-    email: string;
-    phone: string;
-    items: ICartItem[]; 
-    total: number;
+	payment: string;
+	address: string;
+	email: string;
+	phone: string;
+	items: ICartItem[];
+	total: number;
 }
 
 export type ApiListResponse<T> = {
-    total: number;
-    items: T[];
+	total: number;
+	items: T[];
 };
